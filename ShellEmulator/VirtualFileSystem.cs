@@ -90,7 +90,7 @@ internal sealed class VirtualFileSystem
             if (part == "..") { if (parts.Count > 0) parts.RemoveAt(parts.Count - 1); }
             else parts.Add(part);
         }
-        return "/" + string.Join('/', parts);
+        return "/" + string.Join("/", parts);
     }
 
     public bool TryGet(string path, out VfsEntry entry) => entries.TryGetValue(path, out entry!);
