@@ -8,6 +8,7 @@ internal sealed class VfsEntry
     public required string Type { get; init; }
     public string Content { get; set; } = "";
     public string Owner { get; set; } = "root";
+    public byte[]? BinaryContent { get; set; }
 }
 
 internal sealed class VirtualFileSystem
@@ -45,10 +46,13 @@ internal sealed class VirtualFileSystem
             string type = cells[typeCol].Trim().ToLowerInvariant();
             if (entryPath == "/" || !entryPath.StartsWith('/') || (type != "file" && type != "dir"))
                 throw new FormatException($"Недопустимый путь или тип в строке {lineNo + 1}.");
-            string content = cells[contentCol].Replace("\\n", "\n");
-            if (!loaded.TryAdd(entryPath, new VfsEntry {
-                Path = entryPath, Type = type, Content = content, Owner = cells[ownerCol]
-            })) throw new FormatException($"Повторяющийся путь: {entryPath}");
+            string rawContent = cells[contentCol];
+            var newEntry = new VfsEntry { Path = entryPath, Type = type, Owner = cells[ownerCol] };
+            if (type == "file" && rawContent.StartsWith("base64:", StringComparison.Ordinal))
+                newEntry.BinaryContent = Convert.FromBase64String(rawContent[7..]);
+            else
+                newEntry.Content = rawContent.Replace("\\n", "\n");
+            if (!loaded.TryAdd(entryPath, newEntry)) throw new FormatException($"Повторяющийся путь: {entryPath}");
         }
 
         foreach (var entry in loaded.Values.Where(e => e.Path != "/"))
