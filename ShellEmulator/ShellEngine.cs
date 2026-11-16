@@ -139,6 +139,8 @@ internal sealed class ShellEngine
             throw new InvalidOperationException($"Файл не найден: {resolved}");
         if (entry.Type != "file")
             throw new InvalidOperationException($"Это не файл: {resolved}");
+        if (entry.BinaryContent is not null)
+            throw new InvalidOperationException($"Файл содержит двоичные данные и не поддерживается текстовой командой: {resolved}");
         var lines = entry.Content.Replace("\r\n", "\n").Split('\n').ToList();
         if (lines.Count > 0 && lines[^1].Length == 0) lines.RemoveAt(lines.Count - 1);
         return lines;
