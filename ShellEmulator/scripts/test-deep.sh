@@ -1,8 +1,10 @@
-cd /home/student/docs
+# Проверка вложенной VFS, tail, uniq, tac и chown
+cd /data/level1/level2/level3
 pwd
 ls
-tail notes.txt
-uniq -c notes.txt
-tac notes.txt
-chown tester notes.txt
+tail repeated.txt
+uniq repeated.txt
+uniq -c repeated.txt
+tac end.txt
+chown tester repeated.txt
 ls
