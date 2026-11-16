@@ -120,7 +120,7 @@ internal sealed class VirtualFileSystem
 
     private static string Normalize(string path)
     {
-        string normalized = path.Replace('\\\\', '/').TrimEnd('/');
+        string normalized = path.Replace('\\', '/').TrimEnd('/');
         return normalized.Length == 0 ? "/" : normalized;
     }
 
