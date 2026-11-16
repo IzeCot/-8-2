@@ -1,6 +1,7 @@
 namespace ShellEmulator;
 
 internal sealed record CommandResult(string Output, bool Success = true, bool Exit = false);
+internal sealed record ScriptLineResult(string Command, string Prompt, CommandResult Result);
 
 internal sealed class ShellEngine
 {
@@ -45,22 +46,23 @@ internal sealed class ShellEngine
         }
     }
 
-    public IReadOnlyList<(string Command, CommandResult Result)> RunScript(string scriptPath)
+    public IReadOnlyList<ScriptLineResult> RunScript(string scriptPath)
     {
         if (!File.Exists(scriptPath)) throw new FileNotFoundException("Стартовый скрипт не найден.", scriptPath);
-        var results = new List<(string, CommandResult)>();
+        var results = new List<ScriptLineResult>();
         int lineNo = 0;
         foreach (string raw in File.ReadLines(scriptPath))
         {
             lineNo++;
             string line = raw.Trim();
             if (line.Length == 0 || line.StartsWith('#')) continue;
+            string prompt = $"student@vfs:{CurrentDirectory}$ ";
             var result = Execute(line);
-            results.Add((line, result));
+            results.Add(new ScriptLineResult(line, prompt, result));
             if (!result.Success || result.Exit)
             {
                 if (!result.Success)
-                    results.Add(("", new CommandResult($"Скрипт остановлен: ошибка в строке {lineNo}.", false)));
+                    results.Add(new ScriptLineResult("", "", new CommandResult($"Скрипт остановлен: ошибка в строке {lineNo}.", false)));
                 break;
             }
         }
