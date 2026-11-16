@@ -17,12 +17,11 @@ internal sealed class ShellEngine
         IReadOnlyList<string> tokens;
         try { tokens = CommandParser.Parse(input); }
         catch (FormatException ex) { return new CommandResult("Ошибка: " + ex.Message, false); }
-
         if (tokens.Count == 0) return new CommandResult("");
+
         history.Add(input);
         string command = tokens[0];
         string[] args = tokens.Skip(1).ToArray();
-
         try
         {
             return command switch
@@ -74,7 +73,8 @@ internal sealed class ShellEngine
         string path = vfs.Resolve(CurrentDirectory, args.Length == 0 ? "." : args[0]);
         if (!vfs.TryGet(path, out var entry)) return Error($"Путь не найден: {path}");
         if (entry.Type == "file") return new CommandResult(entry.Path.Split('/').Last());
-        var lines = vfs.Children(path).Select(e => (e.Type == "dir" ? "d " : "- ") + e.Path.Split('/').Last() + $"  ({e.Owner})");
+        var lines = vfs.Children(path).Select(e =>
+            (e.Type == "dir" ? "d " : "- ") + e.Path.Split('/').Last() + $"  ({e.Owner})");
         return new CommandResult(string.Join(Environment.NewLine, lines));
     }
 
@@ -82,7 +82,8 @@ internal sealed class ShellEngine
     {
         if (args.Length > 1) return Error("Использование: cd [путь]");
         string path = vfs.Resolve(CurrentDirectory, args.Length == 0 ? "/" : args[0]);
-        if (!vfs.TryGet(path, out var entry) || entry.Type != "dir") return Error($"Каталог не найден: {path}");
+        if (!vfs.TryGet(path, out var entry) || entry.Type != "dir")
+            return Error($"Каталог не найден: {path}");
         CurrentDirectory = path;
         return new CommandResult("");
     }
@@ -90,12 +91,12 @@ internal sealed class ShellEngine
     private CommandResult Tail(string[] args)
     {
         int count = 10;
-        string? file = null;
+        string? file;
         if (args.Length == 1) file = args[0];
-        else if (args.Length == 3 && args[0] == "-n" && int.TryParse(args[1], out count) && count >= 0) file = args[2];
+        else if (args.Length == 3 && args[0] == "-n" && int.TryParse(args[1], out count) && count >= 0)
+            file = args[2];
         else return Error("Использование: tail [-n количество] файл");
-        var lines = ReadLines(file!);
-        return new CommandResult(string.Join(Environment.NewLine, lines.TakeLast(count)));
+        return new CommandResult(string.Join(Environment.NewLine, ReadLines(file).TakeLast(count)));
     }
 
     private CommandResult Uniq(string[] args)
@@ -134,10 +135,13 @@ internal sealed class ShellEngine
     private List<string> ReadLines(string path)
     {
         string resolved = vfs.Resolve(CurrentDirectory, path);
-        if (!vfs.TryGet(resolved, out var entry)) throw new InvalidOperationException($"Файл не найден: {resolved}");
-        if (entry.Type != "file") throw new InvalidOperationException($"Это не файл: {resolved}");
-        return entry.Content.Replace("\r\n", "\n").Split('\n').ToList() is var lines && lines.Count > 0 && lines[^1] == ""
-            ? lines.Take(lines.Count - 1).ToList() : lines;
+        if (!vfs.TryGet(resolved, out var entry))
+            throw new InvalidOperationException($"Файл не найден: {resolved}");
+        if (entry.Type != "file")
+            throw new InvalidOperationException($"Это не файл: {resolved}");
+        var lines = entry.Content.Replace("\r\n", "\n").Split('\n').ToList();
+        if (lines.Count > 0 && lines[^1].Length == 0) lines.RemoveAt(lines.Count - 1);
+        return lines;
     }
 
     private static CommandResult Help(string[] args)
