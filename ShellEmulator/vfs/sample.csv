@@ -2,16 +2,7 @@ path,type,content,owner
 /home,dir,,root
 /home/student,dir,,student
 /home/student/docs,dir,,student
-/home/student/docs/notes.txt,file,"alpha
-beta
-beta
-gamma
-delta",student
-/home/student/docs/log.txt,file,"first line
-second line
-third line
-fourth line
-fifth line",student
-/home/student/readme.txt,file,"Welcome to the virtual file system.
-All operations are performed in memory.",student
+/home/student/docs/notes.txt,file,"alpha\nbeta\nbeta\ngamma\ndelta",student
+/home/student/docs/log.txt,file,"first line\nsecond line\nthird line\nfourth line\nfifth line",student
+/home/student/readme.txt,file,"Welcome to the virtual file system.\nAll operations are performed in memory.",student
 /tmp,dir,,root
