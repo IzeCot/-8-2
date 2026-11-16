@@ -30,7 +30,10 @@ internal sealed class VirtualFileSystem
         if (pathCol < 0 || typeCol < 0 || contentCol < 0 || ownerCol < 0)
             throw new FormatException("CSV должен содержать столбцы path,type,content,owner.");
 
-        var loaded = new Dictionary<string, VfsEntry>(StringComparer.Ordinal);
+        var loaded = new Dictionary<string, VfsEntry>(StringComparer.Ordinal)
+        {
+            ["/"] = new VfsEntry { Path = "/", Type = "dir" }
+        };
         for (int lineNo = 1; lineNo < lines.Length; lineNo++)
         {
             if (string.IsNullOrWhiteSpace(lines[lineNo])) continue;
@@ -40,14 +43,14 @@ internal sealed class VirtualFileSystem
 
             string entryPath = Normalize(cells[pathCol]);
             string type = cells[typeCol].Trim().ToLowerInvariant();
-            if (entryPath == "/" || (!entryPath.StartsWith('/')) || (type != "file" && type != "dir"))
+            if (entryPath == "/" || !entryPath.StartsWith('/') || (type != "file" && type != "dir"))
                 throw new FormatException($"Недопустимый путь или тип в строке {lineNo + 1}.");
+            string content = cells[contentCol].Replace("\\n", "\n");
             if (!loaded.TryAdd(entryPath, new VfsEntry {
-                Path = entryPath, Type = type, Content = cells[contentCol], Owner = cells[ownerCol]
+                Path = entryPath, Type = type, Content = content, Owner = cells[ownerCol]
             })) throw new FormatException($"Повторяющийся путь: {entryPath}");
         }
 
-        if (!loaded.ContainsKey("/")) loaded["/"] = new VfsEntry { Path = "/", Type = "dir" };
         foreach (var entry in loaded.Values.Where(e => e.Path != "/"))
         {
             var parent = Parent(entry.Path);
@@ -57,7 +60,7 @@ internal sealed class VirtualFileSystem
 
         entries.Clear();
         foreach (var pair in loaded) entries[pair.Key] = pair.Value;
-        Name = Path.GetFileNameWithoutExtension(path);
+        Name = System.IO.Path.GetFileNameWithoutExtension(path);
     }
 
     public static VirtualFileSystem CreateDefault()
@@ -92,12 +95,15 @@ internal sealed class VirtualFileSystem
 
     public bool TryGet(string path, out VfsEntry entry) => entries.TryGetValue(path, out entry!);
     public IEnumerable<VfsEntry> Children(string path) =>
-        entries.Values.Where(e => Parent(e.Path) == path && e.Path != path).OrderBy(e => e.Type == "dir" ? 0 : 1).ThenBy(e => e.Path);
+        entries.Values.Where(e => Parent(e.Path) == path && e.Path != path)
+            .OrderBy(e => e.Type == "dir" ? 0 : 1).ThenBy(e => e.Path);
 
     public void ChangeOwner(string path, string owner)
     {
-        if (!entries.TryGetValue(path, out var entry)) throw new InvalidOperationException($"Файл или каталог не найден: {path}");
-        if (string.IsNullOrWhiteSpace(owner)) throw new ArgumentException("Имя владельца не может быть пустым.");
+        if (!entries.TryGetValue(path, out var entry))
+            throw new InvalidOperationException($"Файл или каталог не найден: {path}");
+        if (string.IsNullOrWhiteSpace(owner))
+            throw new ArgumentException("Имя владельца не может быть пустым.");
         entry.Owner = owner;
     }
 
@@ -108,7 +114,11 @@ internal sealed class VirtualFileSystem
         return index <= 0 ? "/" : path[..index];
     }
 
-    private static string Normalize(string path) => path.Replace('\\', '/').TrimEnd('/') is var p && p.Length == 0 ? "/" : p;
+    private static string Normalize(string path)
+    {
+        string normalized = path.Replace('\\\\', '/').TrimEnd('/');
+        return normalized.Length == 0 ? "/" : normalized;
+    }
 
     private static List<string> ParseCsvLine(string line)
     {
