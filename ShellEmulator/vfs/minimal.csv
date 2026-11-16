@@ -1,0 +1,4 @@
+path,type,content,owner
+/home,dir,,root
+/home/guest,dir,,guest
+/home/guest/hello.txt,file,"Hello from minimal VFS.",guest

@@ -1,0 +1,14 @@
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\obj\Debug\net8.0-windows\ShellEmulator.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\obj\Debug\net8.0-windows\ShellEmulator.AssemblyInfoInputs.cache
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\obj\Debug\net8.0-windows\ShellEmulator.AssemblyInfo.cs
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\obj\Debug\net8.0-windows\ShellEmulator.csproj.CoreCompileInputs.cache
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\bin\Debug\net8.0-windows\ShellEmulator.exe
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\bin\Debug\net8.0-windows\ShellEmulator.deps.json
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\bin\Debug\net8.0-windows\ShellEmulator.runtimeconfig.json
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\bin\Debug\net8.0-windows\ShellEmulator.dll
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\bin\Debug\net8.0-windows\ShellEmulator.pdb
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\obj\Debug\net8.0-windows\ShellEmulator.dll
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\obj\Debug\net8.0-windows\refint\ShellEmulator.dll
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\obj\Debug\net8.0-windows\ShellEmulator.pdb
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\obj\Debug\net8.0-windows\ShellEmulator.genruntimeconfig.cache
+C:\Users\ismai\Documents\-8-2пппп\-8-2-variant-8-shell-emulator\ShellEmulator\obj\Debug\net8.0-windows\ref\ShellEmulator.dll
