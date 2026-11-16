@@ -59,12 +59,11 @@ internal sealed class ShellForm : Form
             {
                 try
                 {
-                    foreach (var (command, result) in engine.RunScript(options.ScriptPath))
+                    foreach (var item in engine.RunScript(options.ScriptPath))
                     {
-                        if (command.Length > 0) AppendLine(Prompt() + command);
-                        if (result.Output.Length > 0) AppendLine(result.Output);
-                        if (!result.Success) break;
-                        if (result.Exit) break;
+                        if (item.Command.Length > 0) AppendLine(item.Prompt + item.Command);
+                        if (item.Result.Output.Length > 0) AppendLine(item.Result.Output);
+                        if (!item.Result.Success || item.Result.Exit) break;
                     }
                 }
                 catch (Exception ex) { AppendLine("Ошибка стартового скрипта: " + ex.Message); }
