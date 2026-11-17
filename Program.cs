@@ -340,11 +340,16 @@ internal sealed class DependencyGraph
     public string ToMermaid()
     {
         var sb = new StringBuilder("flowchart TD\n");
-        foreach (var (id, version) in Nodes.OrderBy(x => x.Key))
-            sb.Append("  ").Append(Safe(id)).Append("[\"").Append(Escape(id))
-                .Append(" ").Append(Escape(version)).AppendLine("\"]");
+        // Стабильные уникальные идентификаторы: точки и дефисы NuGet ID не создают коллизий.
+        var ordered = Nodes.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase).ToList();
+        var ids = ordered.Select((p, index) => (p.Key, Id: "P" + index))
+            .ToDictionary(p => p.Key, p => p.Id, StringComparer.OrdinalIgnoreCase);
+        foreach (var (name, version) in ordered)
+            sb.Append("  ").Append(ids[name]).Append("[\"")
+              .Append(Escape(name)).Append(" ").Append(Escape(version)).AppendLine("\"]");
         foreach (var (from, to) in Edges.OrderBy(e => e.From).ThenBy(e => e.To))
-            sb.Append("  ").Append(Safe(from)).Append(" --> ").Append(Safe(to)).AppendLine();
+            if (ids.TryGetValue(from, out var source) && ids.TryGetValue(to, out var target))
+                sb.Append("  ").Append(source).Append(" --> ").Append(target).AppendLine();
         return sb.ToString();
     }
 
