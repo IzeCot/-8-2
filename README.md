@@ -91,14 +91,18 @@ dotnet run --project DependencyGraphVisualizer.csproj -- tests/real-nuget.xml
 powershell -ExecutionPolicy Bypass -File tests/run-tests.ps1
 ```
 
-Те же проверки выполняются в GitHub Actions `.github/workflows/build.yml`.
+Те же офлайн-проверки выполняются в GitHub Actions `.github/workflows/build.yml`. Дополнительно CI запускает независимую сетевую проверку NuGet HTTP API и сравнение с `dotnet list package`.
 
 ## Сравнение с настоящим NuGet (этапы 4 и 5)
 
 Менеджер пакетов используется **только для независимого сравнения**, а не для сбора зависимостей приложением.
 
-1. Откройте `tests/real-nuget.xml`, запустите анализ и сохраните прямые/транзитивные зависимости, порядок обхода и Mermaid.
-2. В **отдельном временном** проекте .NET укажите тот же пакет и соответствующую версию:
+1. Запустите реальный анализ и независимое сравнение одной командой:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File tests/compare-nuget.ps1
+   ```
+   Скрипт сначала запускает **наш анализатор через HTTP**, а затем отдельно создаёт временный проект для вызова официальной команды NuGet. Выводы доступны рядом в консоли.
+2. При желании повторите сравнение вручную в **отдельном временном** проекте .NET с тем же пакетом и соответствующей версией:
    ```bat
    dotnet new console -n NugetCompare
    cd NugetCompare
