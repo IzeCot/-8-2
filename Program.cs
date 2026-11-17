@@ -169,16 +169,29 @@ internal sealed class TestPackageSource : IPackageSource
             throw new FileNotFoundException($"Не найден тестовый репозиторий: {path}");
 
         var doc = XDocument.Load(path);
-        _packages = doc.Root!.Elements("Package").ToDictionary(
-            e => ((string?)e.Attribute("Id") ?? "").ToLowerInvariant(),
-            e => new PackageInfo(
-                (string?)e.Attribute("Id") ?? throw new InvalidDataException("У пакета отсутствует Id."),
-                (string?)e.Attribute("Version") ?? "1.0.0",
-                e.Elements("Dependency")
-                    .Select(d => new PackageDependency(
-                        (string?)d.Attribute("Id") ?? "",
-                        (string?)d.Attribute("Version") ?? "*"))
-                    .ToList()));
+        if (doc.Root?.Name != "TestRepository")
+            throw new InvalidDataException("Ожидался корневой элемент TestRepository.");
+        _packages = new Dictionary<string, PackageInfo>(StringComparer.OrdinalIgnoreCase);
+        foreach (var element in doc.Root.Elements("Package"))
+        {
+            var id = (string?)element.Attribute("Id") ?? "";
+            if (!System.Text.RegularExpressions.Regex.IsMatch(id, "^[A-Z]+$"))
+                throw new InvalidDataException($"Некорректное имя тестового пакета: {id}");
+            var dependencies = new List<PackageDependency>();
+            foreach (var d in element.Elements("Dependency"))
+            {
+                var depId = (string?)d.Attribute("Id") ?? "";
+                if (!System.Text.RegularExpressions.Regex.IsMatch(depId, "^[A-Z]+$"))
+                    throw new InvalidDataException($"Некорректная тестовая зависимость: {depId}");
+                dependencies.Add(new PackageDependency(depId, (string?)d.Attribute("Version") ?? "*"));
+            }
+            if (!_packages.TryAdd(id, new PackageInfo(id, (string?)element.Attribute("Version") ?? "1.0.0", dependencies)))
+                throw new InvalidDataException($"Повторяющийся тестовый пакет: {id}");
+        }
+        foreach (var p in _packages.Values)
+            foreach (var d in p.Dependencies)
+                if (!_packages.ContainsKey(d.Id))
+                    throw new InvalidDataException($"У пакета {p.Id} отсутствует зависимость {d.Id} в тестовом репозитории.");
     }
 
     public Task<PackageInfo> GetPackageAsync(string id, string? requestedVersion = null)
@@ -399,71 +412,44 @@ internal sealed class GraphAnalyzer
 
     public async Task<DependencyGraph> BuildAsync()
     {
-        // Корневой пакет всегда остаётся в графе.
-        if (!string.IsNullOrWhiteSpace(_config.ExcludeSubstring) &&
-            _config.Package.Contains(
-                _config.ExcludeSubstring,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            Console.Error.WriteLine(
-                "Предупреждение: фильтр совпадает с корневым пакетом. " +
-                "Корневой пакет будет сохранён.");
-        }
+        if (!string.IsNullOrEmpty(_config.ExcludeSubstring) &&
+            _config.Package.Contains(_config.ExcludeSubstring, StringComparison.OrdinalIgnoreCase))
+            Console.Error.WriteLine("Предупреждение: корневой пакет не фильтруется.");
 
         var queue = new Queue<(string Id, string? Version, int Depth)>();
         queue.Enqueue((_config.Package, null, 0));
-
-        while (queue.Count > 0)
-        {
-            var (packageId, requestedVersion, depth) = queue.Dequeue();
-
-            if (depth > _config.MaxDepth)
-                continue;
-
-            if (_expanded.Contains(packageId))
-                continue;
-
-            _expanded.Add(packageId);
-
-            try
-            {
-                var package = await _source.GetPackageAsync(
-                    packageId, requestedVersion);
-
-                _graph.Nodes[package.Id] = package.Version;
-
-                // При MaxDepth = 0 корневой пакет загружается,
-                // но его зависимости не добавляются.
-                if (depth >= _config.MaxDepth)
-                    continue;
-
-                foreach (var dependency in package.Dependencies)
-                {
-                    if (!string.IsNullOrEmpty(_config.ExcludeSubstring) &&
-                        dependency.Id.Contains(
-                            _config.ExcludeSubstring,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    _graph.Edges.Add((package.Id, dependency.Id));
-
-                    queue.Enqueue((
-                        dependency.Id,
-                        dependency.VersionRange,
-                        depth + 1));
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine(
-                    $"Не удалось обработать {packageId}: {ex.Message}");
-            }
-        }
-
+        await ProcessLevelsRecursivelyAsync(queue);
         ReportCycles();
         return _graph;
+    }
+
+    // BFS с рекурсией по уровням. Рекурсия не углубляется на каждый пакет.
+    private async Task ProcessLevelsRecursivelyAsync(Queue<(string Id, string? Version, int Depth)> queue)
+    {
+        if (queue.Count == 0) return;
+
+        var levelCount = queue.Count;
+        for (int i = 0; i < levelCount; i++)
+        {
+            var (packageId, version, depth) = queue.Dequeue();
+            if (depth > _config.MaxDepth || !_expanded.Add(packageId)) continue;
+
+            var package = await _source.GetPackageAsync(packageId, version);
+            _graph.Nodes[package.Id] = package.Version;
+            if (depth == _config.MaxDepth) continue;
+
+            foreach (var dep in package.Dependencies)
+            {
+                if (!string.IsNullOrEmpty(_config.ExcludeSubstring) &&
+                    dep.Id.Contains(_config.ExcludeSubstring, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                _graph.Edges.Add((package.Id, dep.Id));
+                _graph.Nodes.TryAdd(dep.Id, "ещё не загружена");
+                if (!_expanded.Contains(dep.Id))
+                    queue.Enqueue((dep.Id, dep.VersionRange, depth + 1));
+            }
+        }
+        await ProcessLevelsRecursivelyAsync(queue);
     }
 
     private void ReportCycles()
