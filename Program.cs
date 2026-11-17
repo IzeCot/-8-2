@@ -373,21 +373,29 @@ internal sealed class DependencyGraph
         return sb.ToString();
     }
 
+    // Детерминированный порядок "зависимости перед пакетом", не порядок сетевых загрузок NuGet.
+    // Для циклов топологического порядка не существует: отмечаем их явно.
     public IReadOnlyList<(string Name, int Level)> GetLoadOrder()
     {
-        var result = new List<(string, int)>();
-        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var visiting = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var order = new List<(string Name, int Level)>();
+        var done = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var active = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        bool cycleFound = false;
         void Visit(string node, int level)
         {
-            if (visited.Contains(node) || !visiting.Add(node)) return;
-            foreach (var dependency in Edges.Where(e => e.From.Equals(node, StringComparison.OrdinalIgnoreCase)).Select(e => e.To))
+            if (done.Contains(node)) return;
+            if (!active.Add(node)) { cycleFound = true; return; }
+            foreach (var dependency in Edges
+                         .Where(e => e.From.Equals(node, StringComparison.OrdinalIgnoreCase))
+                         .Select(e => e.To).OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
                 Visit(dependency, level + 1);
-            visiting.Remove(node);
-            if (visited.Add(node)) result.Add((node, level));
+            active.Remove(node);
+            if (done.Add(node)) order.Add((node, level));
         }
         Visit(Root, 0);
-        return result;
+        if (cycleFound)
+            Console.WriteLine("Внимание: в циклическом графе нет строгого порядка загрузки; показан порядок обхода.");
+        return order;
     }
 
     private static string Safe(string value) => "N_" + new string(value.Select(c => char.IsLetterOrDigit(c) ? c : '_').ToArray());
