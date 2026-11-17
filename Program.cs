@@ -191,17 +191,19 @@ internal sealed class TestPackageSource : IPackageSource
 
 internal sealed class NuGetPackageSource : IPackageSource
 {
-    private readonly HttpClient _http = new();
+    private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(25) };
     private readonly string _baseUrl;
 
     public NuGetPackageSource(string baseUrl)
     {
         _baseUrl = baseUrl.TrimEnd('/') + "/";
-        _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("DependencyGraphVisualizer", "1.0"));
+        // Только HTTP + стандартные JsonDocument/XDocument: ни NuGet CLI, ни библиотеки NuGet не используются.
     }
 
     public async Task<PackageInfo> GetPackageAsync(string id, string? requestedVersion = null)
     {
+        if (!System.Text.RegularExpressions.Regex.IsMatch(id, @"^[A-Za-z0-9_.-]+$"))
+            throw new InvalidDataException($"Недопустимое имя NuGet-пакета: {id}");
         var normalizedId = id.ToLowerInvariant();
         var versionsUrl = $"{_baseUrl}{normalizedId}/index.json";
         using var versionsResponse = await _http.GetAsync(versionsUrl);
@@ -209,7 +211,7 @@ internal sealed class NuGetPackageSource : IPackageSource
         using var versionsJson = JsonDocument.Parse(await versionsResponse.Content.ReadAsStringAsync());
         var versions = versionsJson.RootElement.GetProperty("versions")
             .EnumerateArray().Select(x => x.GetString()!)
-            .Where(v => !v.Contains('-'))
+            .Where(v => !v.Contains('-') && !v.Contains('+'))
             .ToList();
 
         var selected = versions
