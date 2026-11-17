@@ -10,7 +10,8 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
-        var configPath = args.Length > 0 ? args[0] : "config.xml";
+        if (args.Length > 1) { Console.Error.WriteLine("Использование: dotnet run -- [путь к config.xml]"); return 1; }
+        var configPath = args.Length == 1 ? args[0] : "config.xml";
 
         try
         {
@@ -100,14 +101,20 @@ internal sealed class AppConfig
 
         var doc = XDocument.Load(path);
         var root = doc.Root ?? throw new InvalidDataException("В config.xml отсутствует корневой элемент.");
-        string Get(string name, string fallback = "") =>
-            (string?)root.Element(name) ?? fallback;
-        bool GetBool(string name, bool fallback) =>
-            bool.TryParse(Get(name), out var value) ? value : fallback;
-        int GetInt(string name, int fallback)
+        if (root.Name.LocalName != "Configuration")
+            throw new InvalidDataException("Корневой элемент должен называться Configuration.");
+        string Get(string name) =>
+            (string?)root.Element(name) ?? throw new InvalidDataException($"Отсутствует параметр {name}.");
+        bool GetBool(string name)
         {
-            if (!int.TryParse(Get(name), out var value) || value < 0)
-                throw new InvalidDataException($"Параметр {name} должен быть целым числом >= 0.");
+            if (!bool.TryParse(Get(name).Trim(), out var value))
+                throw new InvalidDataException($"Параметр {name} должен быть true или false.");
+            return value;
+        }
+        int GetInt(string name)
+        {
+            if (!int.TryParse(Get(name).Trim(), out var value) || value < 0 || value > 100)
+                throw new InvalidDataException($"Параметр {name} должен быть целым числом от 0 до 100.");
             return value;
         }
 
@@ -115,26 +122,31 @@ internal sealed class AppConfig
         if (string.IsNullOrWhiteSpace(package))
             throw new InvalidDataException("В config.xml необходимо указать Package.");
 
-        var testMode = GetBool("TestMode", false);
-        var repository = Get("Repository",
-            testMode ? "test-repository.xml" : "https://api.nuget.org/v3-flatcontainer/").Trim();
+        var testMode = GetBool("TestMode");
+        var repository = Get("Repository").Trim();
+        if (repository.Length == 0)
+            throw new InvalidDataException("Параметр Repository не может быть пустым.");
+        if (testMode && !System.Text.RegularExpressions.Regex.IsMatch(package, "^[A-Z]+$"))
+            throw new InvalidDataException("В тестовом режиме Package должен содержать только заглавные латинские буквы.");
 
         if (testMode && !Uri.TryCreate(repository, UriKind.Absolute, out _))
             repository = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path))!, repository));
 
+        if (testMode && !File.Exists(repository))
+            throw new FileNotFoundException($"Тестовый репозиторий не найден: {repository}");
         if (!testMode && (!Uri.TryCreate(repository, UriKind.Absolute, out var uri) ||
                           (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)))
-            throw new InvalidDataException("Repository должен быть HTTP(S)-адресом NuGet API.");
+            throw new InvalidDataException("Repository должен быть HTTP(S)-адресом NuGet flat-container API.");
 
         return new AppConfig
         {
             Package = package,
             Repository = repository,
             TestMode = testMode,
-            AsciiTree = GetBool("AsciiTree", true),
-            MaxDepth = GetInt("MaxDepth", 3),
+            AsciiTree = GetBool("AsciiTree"),
+            MaxDepth = GetInt("MaxDepth"),
             ExcludeSubstring = Get("ExcludeSubstring").Trim(),
-            ShowLoadOrder = GetBool("ShowLoadOrder", true)
+            ShowLoadOrder = GetBool("ShowLoadOrder")
         };
     }
 }
