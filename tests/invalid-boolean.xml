@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Package>ALPHA</Package>
+  <Repository>../test-repository.xml</Repository>
+  <TestMode>maybe</TestMode>
+  <AsciiTree>true</AsciiTree>
+  <ShowLoadOrder>true</ShowLoadOrder>
+  <MaxDepth>2</MaxDepth>
+  <ExcludeSubstring></ExcludeSubstring>
+</Configuration>

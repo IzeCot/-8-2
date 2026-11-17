@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Package>ALPHA</Package>
+  <Repository>../missing-graph.xml</Repository>
+  <TestMode>true</TestMode>
+  <AsciiTree>true</AsciiTree>
+  <ShowLoadOrder>true</ShowLoadOrder>
+  <MaxDepth>3</MaxDepth>
+  <ExcludeSubstring></ExcludeSubstring>
+</Configuration>

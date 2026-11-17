@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRepository>
+  <Package Id="ALPHA" Version="1.0.0">
+    <Dependency Id="BRAVO" Version="1.0.0" />
+    <Dependency Id="CHARLIE" Version="1.0.0" />
+  </Package>
+  <Package Id="BRAVO" Version="1.2.0">
+    <Dependency Id="DELTA" Version="1.0.0" />
+  </Package>
+  <Package Id="CHARLIE" Version="2.0.0">
+    <Dependency Id="DELTA" Version="1.0.0" />
+    <Dependency Id="ECHO" Version="1.0.0" />
+  </Package>
+  <Package Id="DELTA" Version="1.0.0">
+    <Dependency Id="ALPHA" Version="1.0.0" />
+  </Package>
+  <Package Id="ECHO" Version="1.0.0" />
+</TestRepository>

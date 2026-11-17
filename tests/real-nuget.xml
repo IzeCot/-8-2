@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Package>Newtonsoft.Json</Package>
+  <Repository>https://api.nuget.org/v3-flatcontainer/</Repository>
+  <TestMode>false</TestMode>
+  <AsciiTree>true</AsciiTree>
+  <ShowLoadOrder>true</ShowLoadOrder>
+  <MaxDepth>2</MaxDepth>
+  <ExcludeSubstring></ExcludeSubstring>
+</Configuration>
