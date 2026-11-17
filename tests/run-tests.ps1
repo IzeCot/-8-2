@@ -22,3 +22,4 @@ CheckCase "tests/invalid-depth.xml" "MaxDepth" $true
 CheckCase "tests/invalid-repository.xml" "Тестовый репозиторий не найден" $true
 CheckCase "tests/invalid-package.xml" "заглавные латинские" $true
 Write-Host "ALL TESTS PASSED"
+exit 0
