@@ -15,3 +15,6 @@ jobs:
       - name: Build and run offline test cases
         shell: pwsh
         run: ./tests/run-tests.ps1
+      - name: NuGet API smoke test and independent manager comparison
+        shell: pwsh
+        run: ./tests/compare-nuget.ps1
