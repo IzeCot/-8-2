@@ -12,9 +12,10 @@ $folder = Join-Path $env:TEMP ("NuGetCompare_" + [Guid]::NewGuid().ToString("N")
 try {
     & dotnet new console --framework net8.0 -o $folder --force | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "dotnet new failed" }
-    & dotnet add $folder package Newtonsoft.Json | Out-Null
+    $project = Join-Path $folder ((Split-Path $folder -Leaf) + ".csproj")
+    & dotnet add $project package Newtonsoft.Json | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "dotnet add package failed" }
-    $reference = (& dotnet list $folder package --include-transitive 2>&1 | Out-String)
+    $reference = (& dotnet list $project package --include-transitive 2>&1 | Out-String)
     if ($LASTEXITCODE -ne 0 -or !$reference.Contains("Newtonsoft.Json"))
         { throw "NuGet reference output unexpected: $reference" }
     Write-Host "=== Official NuGet dependency list (independent comparison) ==="
